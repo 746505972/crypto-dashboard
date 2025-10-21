@@ -8,9 +8,9 @@ import os
 class CryptoDataFetcher:
     def __init__(self):
         self.base_url = "https://api.coingecko.com/api/v3"
-        # 使用相对路径，适应GitHub Actions环境
-        self.data_file = "../data/crypto_data.csv"
-        self.backup_file = "../data/crypto_data_backup.json"
+        # 修改为相对于仓库根目录的路径
+        self.data_file = "data/crypto_data.csv"
+        self.backup_file = "data/crypto_data_backup.json"
         
     def fetch_market_data(self):
         """获取加密货币市场数据"""
@@ -18,7 +18,7 @@ class CryptoDataFetcher:
             params = {
                 'vs_currency': 'usd',
                 'order': 'market_cap_desc',
-                'per_page': 20,
+                'per_page': 10,
                 'page': 1,
                 'sparkline': 'false',
                 'price_change_percentage': '24h,7d,30d'
