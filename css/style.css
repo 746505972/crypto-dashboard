@@ -40,6 +40,11 @@ body {
     margin-bottom: 10px;
 }
 
+.data-source {
+    font-size: 14px;
+    color: #2c3e50;
+}
+
 .controls {
     display: flex;
     align-items: center;
@@ -244,12 +249,33 @@ body {
     .dashboard-header {
         flex-direction: column;
         text-align: center;
-        gap: 15px;
+        gap: 5px;
+        padding: 6px;         /* 缩小手机上的内边距 */
     }
-    
+
+    .dashboard-header h1 {
+        font-size: 0.8rem;     /* 手机上字体略小 */
+    }
+
+    .data-source {
+        font-size: 10px;
+        color: #2c3e50;
+    }
+
+    .refresh-btn {
+        font-size: 0.6rem;
+        padding: 5px 10px;
+    }
+
+    .last-updated {
+        font-size: 10px;
+        color: #7f8c8d;
+    }
     .controls {
+        width: 100%;
+        display: flex;
         justify-content: center;
-        flex-wrap: wrap;
+        gap: 8px;
     }
     
     .crypto-grid {
