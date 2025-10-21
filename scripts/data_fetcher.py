@@ -8,9 +8,9 @@ import os
 class CryptoDataFetcher:
     def __init__(self):
         self.base_url = "https://api.coingecko.com/api/v3"
-        # 修改路径，与项目结构一致
-        self.data_file = "data/crypto_data.csv"
-        self.backup_file = "data/crypto_data_backup.json"
+        # 使用相对路径，适应GitHub Actions环境
+        self.data_file = "../data/crypto_data.csv"
+        self.backup_file = "../data/crypto_data_backup.json"
         
     def fetch_market_data(self):
         """获取加密货币市场数据"""
@@ -21,35 +21,38 @@ class CryptoDataFetcher:
                 'per_page': 10,
                 'page': 1,
                 'sparkline': 'false',
-                'price_change_percentage': '24h'
+                'price_change_percentage': '24h,7d,30d'
             }
             
-            print("正在从CoinGecko API获取数据...")
+            print("🔄 正在从CoinGecko API获取数据...")
             response = requests.get(
                 f"{self.base_url}/coins/markets",
                 params=params,
-                timeout=10
+                timeout=15
             )
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"成功获取 {len(data)} 个加密货币数据")
+                print(f"✅ 成功获取 {len(data)} 个加密货币数据")
                 return data
+            elif response.status_code == 429:
+                print("⚠️  API频率限制，使用本地备份数据")
+                return self.read_latest_data()
             else:
-                print(f"API请求失败，状态码: {response.status_code}")
+                print(f"❌ API请求失败，状态码: {response.status_code}")
                 return None
                 
         except requests.exceptions.RequestException as e:
-            print(f"网络请求错误: {e}")
+            print(f"❌ 网络请求错误: {e}")
             return None
         except Exception as e:
-            print(f"获取数据时发生错误: {e}")
+            print(f"❌ 获取数据时发生错误: {e}")
             return None
     
     def save_to_csv(self, data):
         """保存数据到CSV文件"""
         if not data:
-            print("没有数据可保存")
+            print("❌ 没有数据可保存")
             return False
             
         try:
@@ -71,7 +74,7 @@ class CryptoDataFetcher:
                 
                 if not file_exists:
                     writer.writeheader()
-                    print("创建新的CSV文件并写入表头")
+                    print("📄 创建新的CSV文件并写入表头")
                 
                 # 写入数据
                 current_time = datetime.now().isoformat()
@@ -92,11 +95,11 @@ class CryptoDataFetcher:
                     }
                     writer.writerow(row)
                 
-                print(f"成功保存 {len(data)} 条数据到 {self.data_file}")
+                print(f"💾 成功保存 {len(data)} 条数据到 {self.data_file}")
                 return True
                 
         except Exception as e:
-            print(f"保存CSV文件时发生错误: {e}")
+            print(f"❌ 保存CSV文件时发生错误: {e}")
             return False
     
     def save_to_json(self, data):
@@ -113,17 +116,17 @@ class CryptoDataFetcher:
             with open(self.backup_file, 'w', encoding='utf-8') as f:
                 json.dump(backup_data, f, indent=2, ensure_ascii=False)
             
-            print(f"数据已备份到 {self.backup_file}")
+            print(f"💾 数据已备份到 {self.backup_file}")
             return True
         except Exception as e:
-            print(f"保存JSON备份文件时发生错误: {e}")
+            print(f"❌ 保存JSON备份文件时发生错误: {e}")
             return False
     
     def read_latest_data(self):
         """从CSV文件读取最新的数据"""
         try:
             if not os.path.exists(self.data_file):
-                print("CSV文件不存在")
+                print("📂 CSV文件不存在")
                 return None
             
             # 读取文件的所有行
@@ -132,7 +135,7 @@ class CryptoDataFetcher:
                 rows = list(reader)
             
             if not rows:
-                print("CSV文件为空")
+                print("📂 CSV文件为空")
                 return None
             
             # 获取最新的时间戳
@@ -159,11 +162,11 @@ class CryptoDataFetcher:
                     'image': self.get_coin_image(row['id'])
                 })
             
-            print(f"从CSV文件读取了 {len(formatted_data)} 条最新数据")
+            print(f"📖 从CSV文件读取了 {len(formatted_data)} 条最新数据")
             return formatted_data
             
         except Exception as e:
-            print(f"读取CSV文件时发生错误: {e}")
+            print(f"❌ 读取CSV文件时发生错误: {e}")
             return None
     
     def get_coin_image(self, coin_id):
@@ -184,7 +187,8 @@ class CryptoDataFetcher:
     
     def run(self):
         """主运行函数"""
-        print("=== 加密货币数据获取脚本 ===")
+        print("🚀 === 加密货币数据获取脚本 ===")
+        print(f"⏰ 执行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
         # 尝试从API获取数据
         api_data = self.fetch_market_data()
@@ -193,16 +197,16 @@ class CryptoDataFetcher:
             # 保存到CSV和JSON
             self.save_to_csv(api_data)
             self.save_to_json(api_data)
-            print("数据获取和保存完成！")
+            print("✅ 数据获取和保存完成！")
         else:
-            print("API获取失败，尝试从本地文件读取数据...")
+            print("❌ API获取失败，尝试从本地文件读取数据...")
             local_data = self.read_latest_data()
             if local_data:
-                print("成功从本地文件读取数据")
+                print("✅ 成功从本地文件读取数据")
                 # 将本地数据保存为最新的JSON备份
                 self.save_to_json(local_data)
             else:
-                print("无法从任何来源获取数据")
+                print("❌ 无法从任何来源获取数据")
 
 def main():
     fetcher = CryptoDataFetcher()
