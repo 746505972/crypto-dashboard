@@ -7,8 +7,7 @@ createApp({
             loading: false,
             error: null,
             cryptocurrencies: [],
-            lastUpdated: null,
-            useLocalData: false,
+            dataSource: 'local', // 'api' | 'local' | 'mock'
             dataTimestamp: null
         };
     },
@@ -27,13 +26,12 @@ createApp({
                 this.cryptocurrencies = data;
                 
                 // 检查数据来源
-                this.useLocalData = data._source === 'local';
-                this.dataTimestamp = data.timestamp ? 
-                    new Date(data.timestamp).toLocaleString('zh-CN') : null;
-                
-                // 更新最后刷新时间
-                this.lastUpdated = new Date().toLocaleString('zh-CN');
-                
+                this.dataSource = data._source || 'local';
+                this.dataTimestamp = 
+                    data[0].last_updated
+                        ? new Date(data[0].last_updated).toLocaleString('zh-CN')
+                        : null;
+                  
             } catch (err) {
                 this.error = `获取数据失败: ${err.message}`;
                 console.error('数据获取错误:', err);

@@ -13,18 +13,17 @@
         <header class="dashboard-header">
             <div class="header-main">
                 <h1>🪙 加密货币行情仪表盘</h1>
-                <div v-if="useLocalData" class="data-source">
-                    📁 使用本地数据（最后更新: {{ dataTimestamp }}）
-                </div>
-                <div v-else class="data-source">
-                    🌐 使用实时数据
+                <div class="data-source">
+                    {{ dataSource === 'local' ? '📁 使用本地数据' : 
+                    dataSource === 'mock' ? '🧪 使用模拟数据' : 
+                    '🌐 使用实时数据' }}
                 </div>
             </div>
             <div class="controls">
                 <button @click="fetchMarketData" :disabled="loading" class="refresh-btn">
                     {{ loading ? '刷新中...' : '🔄 刷新数据' }}
                 </button>
-                <span class="last-updated" v-if="lastUpdated">最后更新: {{ lastUpdated }}</span>
+                <span class="last-updated" v-if="dataTimestamp">最后更新: {{ dataTimestamp }}</span>
             </div>
         </header>
 

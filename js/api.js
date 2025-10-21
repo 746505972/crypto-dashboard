@@ -11,18 +11,23 @@ class CoinGeckoAPI {
         try {
             console.log('尝试从CoinGecko API获取实时数据...');
             const apiData = await this.fetchFromAPI();
+            apiData._source = 'api';
             return apiData;
         } catch (error) {
             console.warn('API获取失败，尝试使用本地数据:', error.message);
             try {
                 const localData = await this.fetchFromLocal();
+                localData._source = 'local';
                 return localData;
             } catch (localError) {
                 console.error('本地数据也获取失败，使用模拟数据:', localError.message);
-                return this.getMockData();
+                const mockData = this.getMockData();
+                mockData._source = 'mock';
+                return mockData;
             }
         }
     }
+
 
     // 从API获取数据
     async fetchFromAPI() {
