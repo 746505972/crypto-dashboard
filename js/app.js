@@ -8,7 +8,8 @@ createApp({
             error: null,
             cryptocurrencies: [],
             lastUpdated: null,
-            useMockData: false
+            useLocalData: false,
+            dataTimestamp: null
         };
     },
     
@@ -25,13 +26,13 @@ createApp({
                 const data = await cryptoAPI.getMarketData();
                 this.cryptocurrencies = data;
                 
-                // 检查是否是模拟数据
-                this.useMockData = data.length > 0 && data[0].id === 'bitcoin';
+                // 检查数据来源
+                this.useLocalData = data._source === 'local';
+                this.dataTimestamp = data.timestamp ? 
+                    new Date(data.timestamp).toLocaleString('zh-CN') : null;
                 
                 // 更新最后刷新时间
                 this.lastUpdated = new Date().toLocaleString('zh-CN');
-                
-                console.log('数据获取成功:', data.length, '个币种');
                 
             } catch (err) {
                 this.error = `获取数据失败: ${err.message}`;
