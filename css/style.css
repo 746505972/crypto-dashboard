@@ -1,0 +1,259 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
+}
+
+#app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* 头部样式 */
+.dashboard-header {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.dashboard-header h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.refresh-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    background: #2980b9;
+}
+
+.refresh-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.last-updated {
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+/* 主内容区域 */
+.dashboard-main {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 加密货币网格 */
+.crypto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.crypto-card {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-left: 4px solid #3498db;
+}
+
+.crypto-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 加密货币头部 */
+.crypto-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 12px;
+}
+
+.crypto-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.crypto-info {
+    flex: 1;
+}
+
+.crypto-info h3 {
+    color: #2c3e50;
+    font-size: 1.2em;
+    margin-bottom: 4px;
+}
+
+.crypto-symbol {
+    color: #7f8c8d;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.market-cap-rank {
+    background: #3498db;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+/* 价格和变化 */
+.crypto-price {
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.crypto-change {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.positive {
+    background: #d4edda;
+    color: #155724;
+}
+
+.negative {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* 统计数据 */
+.crypto-stats {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 4px 0;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.stat-value {
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 0.95em;
+}
+
+/* 新闻区域 */
+.news-section {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.news-section h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 1.5em;
+}
+
+.news-placeholder {
+    text-align: center;
+    padding: 40px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px dashed #dee2e6;
+}
+
+.news-placeholder p {
+    margin-bottom: 10px;
+    color: #6c757d;
+}
+
+/* 加载和错误状态 */
+.loading, .error {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 1.2em;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.loading {
+    color: #3498db;
+}
+
+.error {
+    color: #e74c3c;
+    background: #fadbd8;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    #app {
+        padding: 10px;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .controls {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .crypto-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .crypto-card {
+        padding: 15px;
+    }
+}
