@@ -18,7 +18,7 @@ class CryptoDataFetcher:
             params = {
                 'vs_currency': 'usd',
                 'order': 'market_cap_desc',
-                'per_page': 20,
+                'per_page': 100,
                 'page': 1,
                 'sparkline': 'false',
                 'price_change_percentage': '24h,7d,30d'
@@ -159,7 +159,6 @@ class CryptoDataFetcher:
                     'low_24h': float(row['low_24h']),
                     'total_volume': float(row['total_volume']),
                     'last_updated': row['last_updated'],
-                    'image': self.get_coin_image(row['id'])
                 })
             
             print(f"📖 从CSV文件读取了 {len(formatted_data)} 条最新数据")
@@ -168,22 +167,6 @@ class CryptoDataFetcher:
         except Exception as e:
             print(f"❌ 读取CSV文件时发生错误: {e}")
             return None
-    
-    def get_coin_image(self, coin_id):
-        """根据币种ID获取图片URL"""
-        images = {
-            'bitcoin': 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',
-            'ethereum': 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
-            'binancecoin': 'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
-            'ripple': 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png',
-            'cardano': 'https://assets.coingecko.com/coins/images/975/small/cardano.png',
-            'solana': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
-            'dogecoin': 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png',
-            'polkadot': 'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
-            'matic-network': 'https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png',
-            'stellar': 'https://assets.coingecko.com/coins/images/100/small/Stellar_symbol_black_RGB.png'
-        }
-        return images.get(coin_id, 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png')
     
     def run(self):
         """主运行函数"""
