@@ -14,10 +14,11 @@
             <div class="header-main">
                 <h1>🪙 加密货币行情仪表盘</h1>
                 <div class="data-source">
-                    {{ dataSource === 'local' ? '📁 使用本地数据' : 
-                    dataSource === 'mock' ? '🧪 使用模拟数据' : 
+                    {{ dataSource === 'local' ? '📁 网络请求失败，使用本地数据' : 
+                    dataSource === 'mock' ? '网络及本地访问均失败，使用模拟数据' : 
                     '🌐 使用实时数据' }}
                 </div>
+                <button v-if="selectedCoin" class="back-btn" @click="selectedCoin = null">← 返回</button>
             </div>
             <div class="controls">
                 <button @click="fetchMarketData" :disabled="loading" class="refresh-btn">
@@ -39,45 +40,89 @@
             </div>
 
             <!-- 数据展示 -->
-            <div v-else class="crypto-grid">
-                <div v-for="coin in cryptocurrencies" :key="coin.id" class="crypto-card">
-                    <div class="crypto-header">
-                        <img :src="coin.image" :alt="coin.name" class="crypto-icon">
-                        <div class="crypto-info">
-                            <h3>{{ coin.name }}</h3>
-                            <span class="crypto-symbol">{{ coin.symbol.toUpperCase() }}</span>
-                        </div>
-                        <div class="market-cap-rank">#{{ coin.market_cap_rank }}</div>
-                    </div>
+            <div v-else>
+                <!-- 翻页控制 -->
+                <div v-if="!selectedCoin" class="pagination-controls">
+                    <button @click="goToPageOne">首页</button>
+                    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
 
-                    <div class="crypto-price">
-                        ${{ formatPrice(coin.current_price) }}
-                    </div>
+                    <span>第</span>
 
-                    <div class="crypto-change" :class="getChangeClass(coin.price_change_percentage_24h)">
-                        {{ coin.price_change_percentage_24h?.toFixed(2) }}%
-                    </div>
+                    <!-- ✅ 跳转输入框 -->
+                    <input
+                        v-model="gotoPageInput"
+                        type="number"
+                        min="1"
+                        class="page-input"
+                        :placeholder="currentPage"
+                    />
+                    <span>页</span>
 
-                    <div class="crypto-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">市值:</span>
-                            <span class="stat-value">${{ formatMarketCap(coin.market_cap) }}</span>
+                    <button @click="nextPage" :disabled="cryptocurrencies.length < coinsPerPage">下一页</button>
+                    <button @click="goToPage">跳转</button>
+                </div>
+                
+                <!-- 总览页面 -->
+                <div v-if="!selectedCoin" class="crypto-grid">
+                    <div v-for="coin in cryptocurrencies" :key="coin.id" class="crypto-card" @click="viewCoinDetails(coin)">
+                        <div class="crypto-header">
+                            <img :src="coin.image" :alt="coin.name" class="crypto-icon">
+                            <div class="crypto-info">
+                                <h3>{{ coin.name }}</h3>
+                                <span class="crypto-symbol">{{ coin.symbol.toUpperCase() }}</span>
+                            </div>
+                            <div class="market-cap-rank">#{{ coin.market_cap_rank }}</div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">24h交易量:</span>
-                            <span class="stat-value">${{ formatVolume(coin.total_volume) }}</span>
+
+                        <div class="price-container">
+                            <div class="crypto-price">${{ formatPrice(coin.current_price) }}</div>
+                            <div class="crypto-change" :class="getChangeClass(coin.price_change_percentage_24h)">
+                                {{ coin.price_change_percentage_24h?.toFixed(2) }}%
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">24h最高:</span>
-                            <span class="stat-value">${{ formatPrice(coin.high_24h) }}</span>
+
+                        <div class="crypto-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">市值:</span>
+                                <span class="stat-value">${{ formatMarketCap(coin.market_cap) }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">24h交易量:</span>
+                                <span class="stat-value">${{ formatVolume(coin.total_volume) }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">24h最高:</span>
+                                <span class="stat-value">${{ formatPrice(coin.high_24h) }}</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">24h最低:</span>
+                                <span class="stat-value">${{ formatPrice(coin.low_24h) }}</span>
+                            </div>                            
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">24h最低:</span>
-                            <span class="stat-value">${{ formatPrice(coin.low_24h) }}</span>
-                        </div>
+
                     </div>
+                   
+                </div>
+
+
+                <!-- 详情页面 -->
+                <div v-else class="coin-detail">
+                    <h2>{{ selectedCoin.name }} ({{ selectedCoin.symbol.toUpperCase() }})</h2>
+                    <img :src="selectedCoin.image" :alt="selectedCoin.name" class="detail-icon">
+
+                    <p>当前价格: ${{ formatPrice(selectedCoin.current_price) }}</p>
+                    <p>市值排名: #{{ selectedCoin.market_cap_rank }}</p>
+                    <p>24h 涨跌幅: 
+                        <span :class="getChangeClass(selectedCoin.price_change_percentage_24h)">
+                            {{ selectedCoin.price_change_percentage_24h?.toFixed(2) }}%
+                        </span>
+                    </p>
+                    <p>24h 最高价: ${{ formatPrice(selectedCoin.high_24h) }}</p>
+                    <p>24h 最低价: ${{ formatPrice(selectedCoin.low_24h) }}</p>
+                    <p>24h 交易量: ${{ formatVolume(selectedCoin.total_volume) }}</p>
                 </div>
             </div>
+
 
             <!-- 新闻展示预留位置 -->
             <section class="news-section">

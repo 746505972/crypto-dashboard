@@ -143,20 +143,23 @@ body {
 }
 
 /* 价格和变化 */
+.price-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .crypto-price {
     font-size: 1.8em;
     font-weight: bold;
     color: #2c3e50;
-    margin-bottom: 8px;
 }
 
 .crypto-change {
     font-size: 1.1em;
     font-weight: bold;
-    margin-bottom: 15px;
     padding: 6px 12px;
     border-radius: 8px;
-    display: inline-block;
 }
 
 .positive {
@@ -192,6 +195,59 @@ body {
     color: #2c3e50;
     font-weight: 500;
     font-size: 0.95em;
+}
+
+.details-btn, .back-btn {
+    margin-top: 10px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #1976d2;
+    color: white;
+    cursor: pointer;
+}
+.details-btn:hover, .back-btn:hover {
+    background-color: #0d47a1;
+}
+.coin-detail {
+    padding: 20px;
+}
+.detail-icon {
+    width: 80px;
+    height: 80px;
+}
+
+.pagination-controls {
+    display: flex;
+    flex-direction: row;       /* 横向排列 */
+    justify-content: center;   /* 水平居中 */
+    align-items: center;       /* 垂直居中 */
+    gap: 12px;
+    margin: 20px auto;         /* 上下留白并水平居中 */
+    width: 100%;               /* 独占整行 */
+    text-align: center;
+}
+
+
+.pagination-controls button {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.pagination-controls button:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+}
+
+.page-input {
+    width: 40px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
 }
 
 /* 新闻区域 */
@@ -277,12 +333,47 @@ body {
         justify-content: center;
         gap: 8px;
     }
-    
+    .crypto-price {
+        font-size: 1.4em;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .crypto-change {
+        font-size: 0.8em;
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 8px;
+    } 
+
     .crypto-grid {
         grid-template-columns: 1fr;
+    }
+    .pagination-controls {
+        display: flex;
+        flex-direction: row;       /* 横向排列 */
+        justify-content: center;   /* 水平居中 */
+        align-items: center;       /* 垂直居中 */
+        gap: 10px;
+        margin: 10px auto;         /* 上下留白并水平居中 */
+        width: 100%;               /* 独占整行 */
+        text-align: center;
+        font-size: 0.6rem;
     }
     
     .crypto-card {
         padding: 15px;
     }
+
+    .pagination-controls button {
+        background-color: #1976d2;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.4rem;
+    }
+
+    
 }

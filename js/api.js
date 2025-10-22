@@ -7,10 +7,10 @@ class CoinGeckoAPI {
     }
 
     // 获取市场数据 - 优先使用API，失败时使用本地数据
-    async getMarketData() {
+    async getMarketData(batch = 1) {
         try {
-            console.log('尝试从CoinGecko API获取实时数据...');
-            const apiData = await this.fetchFromAPI();
+            console.log(`尝试从CoinGecko API获取第 ${batch} 批（每批100个币）数据...`);
+            const apiData = await this.fetchFromAPI(batch);
             apiData._source = 'api';
             return apiData;
         } catch (error) {
@@ -30,12 +30,12 @@ class CoinGeckoAPI {
 
 
     // 从API获取数据
-    async fetchFromAPI() {
+    async fetchFromAPI(batch = 1) {
         const params = {
             vs_currency: 'usd',
             order: 'market_cap_desc',
-            per_page: 10,
-            page: 1,
+            per_page: 100,
+            page: batch,
             sparkline: false,
             price_change_percentage: '24h'
         };
@@ -55,7 +55,7 @@ class CoinGeckoAPI {
         }
 
         const data = await response.json();
-        console.log('成功从API获取数据');
+        console.log(`✅ 成功获取第 ${batch} 批数据（共 ${data.length} 条）`);
         return data;
     }
 
