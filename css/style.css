@@ -52,7 +52,7 @@ body {
 }
 
 .refresh-btn {
-    background: #3498db;
+    background: #27ae60;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -63,7 +63,7 @@ body {
 }
 
 .refresh-btn:hover:not(:disabled) {
-    background: #2980b9;
+    background: #219652;
 }
 
 .refresh-btn:disabled {
@@ -79,7 +79,7 @@ body {
 /* 主内容区域 */
 /* 给主内容区留出顶部空间，避免被头部遮挡 */
 .dashboard-main {
-    margin-top: 120px;  /* 视具体 header 高度调整 */
+    margin-top: 80px;  /* 视具体 header 高度调整 */
 }
 
 /* 加密货币网格 */
@@ -182,7 +182,6 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
     padding: 4px 0;
 }
 
@@ -296,6 +295,90 @@ body {
     background: #fadbd8;
 }
 
+.coin-detail {
+    text-align: center;
+    padding: 20px;
+}
+
+.detail-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+
+.detail-stats {
+    margin: 10px auto 20px;
+    display: inline-block;
+    text-align: left;
+}
+
+#coinChart {
+    display: block;
+    width: 100%;
+    max-width: 700px;
+    height: 300px;
+    margin: 0 auto;
+    background: #fadbd8;
+}
+
+/* 主容器 */
+#chart-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 20px auto;
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* 主图 */
+#mainChart {
+    width: 100% !important;
+    height: 350px !important;
+    background: #ffffff;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* 迷你图（滑块） */
+#volumeChart {
+    width: 95%;
+    height: 120px !important;
+    background: #ffffff;
+    border-radius: 8px;
+    cursor: crosshair;
+    user-select: none;
+}
+
+/* 图表标题 */
+.chart-title {
+    color: #333;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    text-align: left;
+    width: 95%; 
+    font-weight: 600;
+}
+
+/* 高亮选区效果（通过 JS 改变柱子颜色） */
+.volume-highlight {
+    background-color: rgba(255, 99, 132, 0.5);
+}
+
+/* 迷你图标题字体更小 */
+.volume-title {
+    font-size: 0.9rem;
+    color: #666666;
+    margin-bottom: 3px;
+}
+
+
+
 /* 响应式设计 */
 @media (max-width: 768px) {
     #app {
@@ -360,7 +443,15 @@ body {
         text-align: center;
         font-size: 0.6rem;
     }
-    
+
+    .page-input {
+    width: 40px;
+    padding: 2px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    }
+
     .crypto-card {
         padding: 15px;
     }

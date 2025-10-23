@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>加密货币行情仪表盘</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -12,7 +14,6 @@
         <!-- 顶部标题和刷新控制 -->
         <header class="dashboard-header">
             <div class="header-main">
-                <h1>🪙 加密货币行情仪表盘</h1>
                 <div class="data-source">
                     {{ dataSource === 'local' ? '📁 网络请求失败，使用本地数据' : 
                     dataSource === 'mock' ? '网络及本地访问均失败，使用模拟数据' : 
@@ -22,7 +23,7 @@
             </div>
             <div class="controls">
                 <button @click="fetchMarketData" :disabled="loading" class="refresh-btn">
-                    {{ loading ? '刷新中...' : '🔄 刷新数据' }}
+                    {{ loading ? '刷新中...' : '刷新' }}
                 </button>
                 <span class="last-updated" v-if="dataTimestamp">最后更新: {{ dataTimestamp }}</span>
             </div>
@@ -104,23 +105,58 @@
                    
                 </div>
 
+                <!-- 翻页控制 -->
+                <div v-if="!selectedCoin" class="pagination-controls">
+                    <button @click="goToPageOne">首页</button>
+                    <button @click="prevPage" :disabled="currentPage === 1">上一页</button>
+
+                    <span>第</span>
+
+                    <!-- ✅ 跳转输入框 -->
+                    <input
+                        v-model="gotoPageInput"
+                        type="number"
+                        min="1"
+                        class="page-input"
+                        :placeholder="currentPage"
+                    />
+                    <span>页</span>
+
+                    <button @click="nextPage" :disabled="cryptocurrencies.length < coinsPerPage">下一页</button>
+                    <button @click="goToPage">跳转</button>
+                </div>
+
+                <!-- 详情页面 -->
 
                 <!-- 详情页面 -->
                 <div v-else class="coin-detail">
                     <h2>{{ selectedCoin.name }} ({{ selectedCoin.symbol.toUpperCase() }})</h2>
                     <img :src="selectedCoin.image" :alt="selectedCoin.name" class="detail-icon">
 
-                    <p>当前价格: ${{ formatPrice(selectedCoin.current_price) }}</p>
-                    <p>市值排名: #{{ selectedCoin.market_cap_rank }}</p>
-                    <p>24h 涨跌幅: 
-                        <span :class="getChangeClass(selectedCoin.price_change_percentage_24h)">
-                            {{ selectedCoin.price_change_percentage_24h?.toFixed(2) }}%
-                        </span>
-                    </p>
-                    <p>24h 最高价: ${{ formatPrice(selectedCoin.high_24h) }}</p>
-                    <p>24h 最低价: ${{ formatPrice(selectedCoin.low_24h) }}</p>
-                    <p>24h 交易量: ${{ formatVolume(selectedCoin.total_volume) }}</p>
+                    <div class="detail-stats">
+                        <p>当前价格: ${{ formatPrice(selectedCoin.current_price) }}</p>
+                        <p>市值: ${{ formatMarketCap(selectedCoin.market_cap) }}</p>
+                        <p>24h 涨跌幅: 
+                            <span :class="getChangeClass(selectedCoin.price_change_percentage_24h)">
+                                {{ selectedCoin.price_change_percentage_24h?.toFixed(2) }}%
+                            </span>
+                        </p>
+                        <p>24h 最高价: ${{ formatPrice(selectedCoin.high_24h) }}</p>
+                        <p>24h 最低价: ${{ formatPrice(selectedCoin.low_24h) }}</p>
+                        <p>24h 交易量: ${{ formatVolume(selectedCoin.total_volume) }}</p>
+                    </div>
+
+                    <!-- ✅ 图表容器 -->
+                    <div id="chart-container">
+                        <div class="chart-title">加密货币价格走势</div>
+                        <canvas id="mainChart"></canvas>
+                        <div class="chart-title" style="font-size:0.9rem;">交易量区间选择</div>
+                        <canvas id="volumeChart"></canvas>
+                        <p v-if="chartError" class="error">{{ chartError }}</p>
+                    </div>
+
                 </div>
+
             </div>
 
 
