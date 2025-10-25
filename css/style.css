@@ -336,46 +336,7 @@ body {
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* 主图 */
-#mainChart {
-    width: 100% !important;
-    height: 350px !important;
-    background: #ffffff;
-    border-radius: 8px;
-    margin-bottom: 15px;
-}
 
-/* 迷你图（滑块） */
-#volumeChart {
-    width: 95%;
-    height: 120px !important;
-    background: #ffffff;
-    border-radius: 8px;
-    cursor: crosshair;
-    user-select: none;
-}
-
-/* 图表标题 */
-.chart-title {
-    color: #333;
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-    text-align: left;
-    width: 95%; 
-    font-weight: 600;
-}
-
-/* 高亮选区效果（通过 JS 改变柱子颜色） */
-.volume-highlight {
-    background-color: rgba(255, 99, 132, 0.5);
-}
-
-/* 迷你图标题字体更小 */
-.volume-title {
-    font-size: 0.9rem;
-    color: #666666;
-    margin-bottom: 3px;
-}
 
 
 

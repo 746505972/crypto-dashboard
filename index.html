@@ -6,7 +6,8 @@
     <title>加密货币行情仪表盘</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -148,11 +149,9 @@
 
                     <!-- ✅ 图表容器 -->
                     <div id="chart-container">
-                        <div class="chart-title">加密货币价格走势</div>
-                        <canvas id="mainChart"></canvas>
-                        <div class="chart-title" style="font-size:0.9rem;">交易量区间选择</div>
-                        <canvas id="volumeChart"></canvas>
-                        <p v-if="chartError" class="error">{{ chartError }}</p>
+                        <div id="main" style="width: 100%; height: 600px;"></div>
+   
+
                     </div>
 
                 </div>

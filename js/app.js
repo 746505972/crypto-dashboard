@@ -118,165 +118,314 @@ createApp({
         renderChart() {
             if (!this.coinHistory.length) return;
 
-            // 格式化时间标签，精确到分钟
-            const labels = this.coinHistory.map(d => {
-                const date = new Date(d.timestamp);
-                return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-            });
-            
-            const prices = this.coinHistory.map(d => parseFloat(d.current_price));
-            const volumes = this.coinHistory.map(d => parseFloat(d.total_volume));
 
-            const mainCtx = document.getElementById("mainChart").getContext("2d");
-            const volCtx = document.getElementById("volumeChart").getContext("2d");
 
-            if (this.mainChart) this.mainChart.destroy();
-            if (this.volumeChart) this.volumeChart.destroy();
-
-            // 记录拖动选择区间
-            let dragStartIdx = null;
-            let dragEndIdx = null;
-            let isDragging = false;
-
-            // 现代风格的主图配置
-            this.mainChart = new Chart(mainCtx, {
-                type: "line",
-                data: {
-                    labels,
-                    datasets: [{
-                        label: "价格",
-                        data: prices,
-                        borderColor: "rgba(75, 192, 192, 1)",
-                        backgroundColor: "rgba(75, 192, 192, 0.2)",
-                        borderWidth: 2,
-                        pointRadius: 3,  // 显示点
-                        pointHoverRadius: 5,  // 悬停时放大点
-                        pointBackgroundColor: "rgba(75, 192, 192, 1)",
-                        tension: 0.4,
-                        fill: false  // 移除填充
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        y: {
-                            title: { display: true, text: "价格 (USD)", color: "#666" },
-                            grid: { color: "rgba(0, 0, 0, 0.05)" }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: "#666", maxRotation: 45, minRotation: 45 ,
-
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: { labels: { color: "#666" } },
-                        tooltip: {
-                            backgroundColor: "rgba(0, 0, 0, 0.7)",
-                            titleColor: "#fff",
-                            bodyColor: "#fff",
-                            callbacks: {
-                            label: function(context) {
-                                // 自定义工具提示内容
-                                const price = context.parsed.y;
-                                const volume = volumes[context.dataIndex];
-                                return [
-                                    `价格: $${price.toFixed(2)}`,
-                                    `交易量: $${volume.toLocaleString()}`,
-                                    `时间: ${labels[context.dataIndex]}`
-                                ];
-                            }
-                        },
-                            intersect: false,
-                            mode: 'nearest',
-                            position: 'nearest'
-                        },
-                        zoom: {
-                            pan: { enabled: true, mode: "x" },
-                            zoom: {
-                                wheel: { enabled: true },
-                                pinch: { enabled: true },
-                                mode: "x"
-                            }
-                        }
+            const throttle = (func, delay) => {
+                let timer = null;
+                return function() {
+                    const context = this;
+                    const args = arguments;
+                    if (!timer) {
+                        timer = setTimeout(() => {
+                            func.apply(context, args);
+                            timer = null;
+                        }, delay);
                     }
-                }
-            });
-
-            // 现代风格的交易量图
-            this.volumeChart = new Chart(volCtx, {
-                type: "bar",
-                data: {
-                    labels,
-                    datasets: [{
-                        label: "交易量",
-                        data: volumes,
-                        backgroundColor: "rgba(54, 162, 235, 0.7)",
-                        borderColor: "rgba(54, 162, 235, 1)",
-                        borderWidth: 1,
-                        borderRadius: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
-                }
-            });
-
-            // 鼠标拖动选择事件
-            volCtx.canvas.addEventListener("mousedown", e => {
-                const points = this.volumeChart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, true);
-                if (points.length) {
-                    dragStartIdx = points[0].index;
-                    isDragging = true;
-                }
-            });
-
-            volCtx.canvas.addEventListener("mousemove", e => {
-                if (!isDragging) return;
-                const points = this.volumeChart.getElementsAtEventForMode(e, 'nearest', { intersect: false }, true);
-                if (points.length) {
-                    dragEndIdx = points[0].index;
-                    highlightRange(dragStartIdx, dragEndIdx);
-                    updateMainChart(dragStartIdx, dragEndIdx);
-                }
-            });
-
-            volCtx.canvas.addEventListener("mouseup", e => {
-                isDragging = false;
-            });
-
-            // 更新主图显示范围
-            const updateMainChart = (start, end) => {
-                if (start == null || end == null) return;
-                const [minIdx, maxIdx] = start < end ? [start, end] : [end, start];
-                this.mainChart.options.scales.x.min = minIdx;
-                this.mainChart.options.scales.x.max = maxIdx;
-                this.mainChart.update();
+                };
             };
 
-            // 可视化选区
-            const highlightRange = (start, end) => {
-                const dataset = this.volumeChart.data.datasets[0];
-                dataset.backgroundColor = dataset.data.map((v, i) => {
-                    const [minIdx, maxIdx] = start < end ? [start, end] : [end, start];
-                    return i >= minIdx && i <= maxIdx ? "rgba(255, 99, 132, 0.7)" : "rgba(54, 162, 235, 0.7)";
+            // 确保 DOM 已经渲染
+            this.$nextTick(() => {
+                const chartDom = document.getElementById('main');
+                if (!chartDom) {
+                    console.error('找不到图表容器 #main');
+                    return;
+                }
+
+                // 如果已有图表实例，先销毁
+                if (this.chart) {
+                    this.chart.dispose();
+                }
+
+                // 初始化时添加渲染模式配置
+                const renderOpts = {
+                    renderer: 'canvas', // 强制使用canvas渲染
+                    useDirtyRect: true  // 启用脏矩形渲染
+                };
+                
+                this.chart = echarts.init(chartDom, null, renderOpts);
+
+                // 格式化数据
+                const dates = this.coinHistory.map(d => {
+                    return new Date(d.timestamp); // 直接返回Date对象，ECharts能自动处理
                 });
-                this.volumeChart.update('none');
-            };
-        },
+                console.log(dates[0], dates[dates.length -1]);
+                const prices = this.coinHistory.map(d => [
+                    new Date(d.timestamp), // 日期
+                    parseFloat(d.current_price) // 值
+                ]);
 
+                const volumes = this.coinHistory.map(d => [
+                    new Date(d.timestamp), // 日期
+                    parseFloat(d.total_volume) // 值
+                ]);
+
+                // ECharts 配置 - 在一个div中显示价格和交易量
+                const option = {
+                    title: {
+                        text: `${this.selectedCoin.name} (${this.selectedCoin.symbol.toUpperCase()})`,
+                        left: 'center',
+                        textStyle: {
+                            color: '#666',
+                            fontSize: 16
+                        }
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross',
+                            crossStyle: {
+                                color: '#999'
+                            }
+                        },
+                        snap: true,  // 添加这个配置，让提示线自动吸附到数据点
+                        label: {
+                            show: true,  // 确保显示坐标值
+                            backgroundColor: '#666'
+                        },
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        textStyle: {
+                            color: '#fff'
+                        },
+                        formatter: function(params) {
+                            let result = `<div>时间: ${params[0].axisValue}</div>`;
+                            params.forEach(param => {
+                                if (param.seriesName === '价格') {
+                                    result += `<div>价格: $${param.data.toFixed(2)}</div>`;
+                                } else if (param.seriesName === '交易量') {
+                                    result += `<div>交易量: $${param.data.toLocaleString()}</div>`;
+                                }
+                            });
+                            return result;
+                        }
+                    },
+
+                    // 配置多个网格区域
+                    grid: [
+                        {
+                            // 价格图区域 - 上半部分
+                            top: '15%',
+                            bottom: '25%',
+                            left: '10%',
+                            right: '10%',
+                            containLabel: true
+                        },
+                        {
+                            // 交易量图区域 - 下半部分
+                            top: '80%',
+                            bottom: '10%',
+                            left: '10%',
+                            right: '10%',
+                            containLabel: true
+                        }
+                    ],
+                    xAxis: [
+                        {
+                            // 价格图的X轴
+                            type: 'time',
+                            name: '时间',
+                            gridIndex: 0,
+                            data: dates,
+                            axisLabel: {
+                                color: '#666',
+                                rotate: 20,
+                                interval: 'auto',
+                                formatter: '{MM}-{dd} {HH}:{mm}',
+
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            }
+                        },
+                        {
+                            // 交易量图的X轴
+                            type: 'time',
+                            gridIndex: 1,
+                            data: dates,
+                            axisLabel: {
+                                show: false
+                            },
+                            axisTick: {
+                                show: false
+                            },
+                            axisLine: {
+                                show: false
+                            }
+                        }
+                    ],
+                    yAxis: [
+                        {
+                            // 价格图的Y轴
+                            type: 'value',
+                            gridIndex: 0,
+                            scale: true,
+                            name: '价格 (USD)',
+                            position: 'left',
+                            axisLabel: {
+                                color: '#666',
+                                formatter: '${value}',
+                                interval: 'auto'
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            }
+                        },
+                        {
+                            // 交易量图的Y轴
+                            type: 'value',
+                            gridIndex: 1,
+                            scale: true,
+                            name: '交易量',
+                            position: 'left',
+                            axisLabel: {
+                                color: '#666',
+                                interval: 'auto',
+                                formatter: function(value) {
+                                    if (!value) return '0';
+                                    if (value >= 1e9) return (value / 1e9).toFixed(2) + 'B';
+                                    if (value >= 1e6) return (value / 1e6).toFixed(2) + 'M';
+                                    if (value >= 1e3) return (value / 1e3).toFixed(2) + 'K';
+                                    return value.toString();
+                                },
+                                show: false
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            }
+                        }
+                    ],
+                    series: [
+                        {
+                            name: '价格',
+                            type: 'line',
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            data: prices,
+                            smooth: true,
+
+                            symbolSize: 4,
+                            itemStyle: {
+                                color: 'rgba(75, 192, 192, 1)'
+                            },
+                            lineStyle: {
+                                color: 'rgba(75, 192, 192, 1)',
+                                width: 2
+                            },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0,
+                                    y: 0,
+                                    x2: 0,
+                                    y2: 1,
+                                    colorStops: [{
+                                        offset: 0,
+                                        color: 'rgba(75, 192, 192, 0.3)'
+                                    }, {
+                                        offset: 1,
+                                        color: 'rgba(75, 192, 192, 0.1)'
+                                    }]
+                                }
+                            },
+                            emphasis: {
+                                focus: 'series'
+                            }
+                        },
+                        {
+                            name: '交易量',
+                            type: 'line',
+                            symbol: 'circle',                            
+                            xAxisIndex: 1,
+                            yAxisIndex: 1,
+                            data: volumes,
+                            itemStyle: {
+                                color: 'rgba(54, 162, 235, 0.7)'
+                            },
+
+                            emphasis: {
+                                focus: 'series'
+                            }
+                        }
+                    ],
+                    dataZoom: [
+                        {
+                            type: 'inside',
+                            xAxisIndex: [0, 1], // 同时控制两个X轴
+                            start: 0,
+                            end: 100,
+                            zoomOnMouseWheel: true, // 启用鼠标滚轮缩放
+                            moveOnMouseMove: true, // 鼠标移动时可以拖动
+                            moveOnMouseWheel: false, // 禁用鼠标滚轮平移
+                            throttle: 100 ,
+                            filterMode: 'filter'
+                        },
+                        {
+                            type: 'slider',
+                            xAxisIndex: [0, 1], // 同时控制两个X轴
+                            start: 0,
+                            end: 100,
+                            bottom: 10,
+                            height: 20,
+                            throttle: 100 ,
+                            filterMode: 'filter'
+                        }
+                    ],
+                    axisPointer: {
+                        link: [
+                            {
+                                xAxisIndex: 'all'
+                            }
+                        ],
+                        triggerTooltip: true
+                    },                    
+                    
+                };
+
+                // 设置配置项并渲染图表
+                option.animation = false;
+                option.progressive = 1000;
+                option.progressiveThreshold = 3000;
+
+                this.chart.setOption(option);
+
+                // 使用节流函数包装resize事件
+                const throttledResize = throttle(() => {
+                    this.chart.resize();
+                }, 200);
+                
+                window.addEventListener('resize', throttledResize);
+
+                this.$once('hook:beforeDestroy', () => {
+                    window.removeEventListener('resize', throttledResize);
+                });
+            });
+        },
 
         // 页码跳转
         async goToPage() {
