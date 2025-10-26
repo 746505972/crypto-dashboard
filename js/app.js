@@ -170,7 +170,67 @@ createApp({
                         textStyle: {
                             color: '#fff'
                         },
+                        formatter: function(params) {
+                            try {
+                                // 1. 时间格式化
+                                const date = new Date(params[0].axisValue);
+                                const timeStr = isNaN(date.getTime()) 
+                                    ? params[0].axisValue 
+                                    : `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2,'0')}-${date.getDate().toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                                
+                                // 2. 构建结果
+                                let result = [`<div style="font-weight:bold;">📅 ${timeStr}</div>`];
+                                
+                                params.forEach(param => {
+                                   
+                                    // 3. 根据不同系列采用不同格式化方式
+                                    if (param.seriesName === '价格') {
+                                        result.push(`<div>价格: <span style="color:${param.color}">$${
+                                            param.data.value[1].toLocaleString('en-US', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            })
+                                        }</span></div>`);
+                                        result.push(`<div>市值: <span>$${
+                                            param.data.rawData.market_cap.toLocaleString('en-US', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            })
+                                        }</span></div>`);
+                                        result.push(`<div>市值排名: <span>${
+                                            param.data.rawData.market_cap_rank
+                                        }</span></div>`);    
+                                        result.push(`<div>24小时变化率: <span>${
+                                            param.data.rawData.price_change_percentage_24h
+                                        }</span></div>`); 
+                                        result.push(`<div>24小时最高价: <span>${
+                                            param.data.rawData.high_24h.toLocaleString('en-US', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            })
+                                        }</span></div>`); 
+                                        result.push(`<div>24小时最低价: <span>${
+                                            param.data.rawData.low_24h.toLocaleString('en-US', {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2
+                                            })
+                                        }</span></div>`);
 
+                                    } else if (param.seriesName === '交易量') {
+                                        result.push(`<div>交易量: <span style="color:${param.color}">$${
+                                            param.data[1].toLocaleString('en-US', {
+                                                maximumFractionDigits: 0
+                                            })
+                                        }</span></div>`);
+                                    }
+                                });
+
+
+                                return result.join('');
+                            } catch (error) {
+                                console.error('Error formatting tooltip:', error);
+                                return '数据格式错误';
+                            }}
                     },
                     grid: [
                         {
@@ -288,7 +348,9 @@ createApp({
                             type: 'line',
                             xAxisIndex: 0,
                             yAxisIndex: 0,
-                            data: debugData.map(d => [d.date, d.price]),
+                            data: debugData.map(d => ({value: [d.date, d.price],
+                                rawData: d
+                            })),
                             smooth: true,
                             symbolSize: 4,
                             itemStyle: {
@@ -409,24 +471,7 @@ createApp({
             }
         },
 
-        formatLargeNumber(num, digits) {
-            if (!num) return '0';
-            num = parseFloat(num);
-            
-            const lookup = [
-                { value: 1, symbol: '' },
-                { value: 1e3, symbol: 'K' },
-                { value: 1e6, symbol: 'M' },
-                { value: 1e9, symbol: 'B' }
-            ];
-            
-            const rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
-            const item = [...lookup].reverse().find(item => num >= item.value);
-            
-            return item 
-                ? (num / item.value).toFixed(digits).replace(rx, '$1') + item.symbol
-                : num.toFixed(digits);
-        },
+
         formatPrice,
         formatMarketCap,
         formatVolume,
