@@ -118,60 +118,33 @@ createApp({
         renderChart() {
             if (!this.coinHistory.length) return;
 
-
-
-            const throttle = (func, delay) => {
-                let timer = null;
-                return function() {
-                    const context = this;
-                    const args = arguments;
-                    if (!timer) {
-                        timer = setTimeout(() => {
-                            func.apply(context, args);
-                            timer = null;
-                        }, delay);
-                    }
-                };
-            };
-
-            // 确保 DOM 已经渲染
+            // 先创建调试用的简化图表
             this.$nextTick(() => {
-                const chartDom = document.getElementById('main');
-                if (!chartDom) {
-                    console.error('找不到图表容器 #main');
+                const debugDom = document.getElementById('debug-chart');
+                if (!debugDom) {
+                    console.error('找不到调试图表容器 #debug-chart');
                     return;
                 }
 
-                // 如果已有图表实例，先销毁
-                if (this.chart) {
-                    this.chart.dispose();
+                if (this.debugChart) {
+                    this.debugChart.dispose();
                 }
-
-                // 初始化时添加渲染模式配置
-                const renderOpts = {
-                    renderer: 'canvas', // 强制使用canvas渲染
-                    useDirtyRect: true  // 启用脏矩形渲染
-                };
+                this.debugChart = echarts.init(debugDom);
+                const debugChart = echarts.init(debugDom);
                 
-                this.chart = echarts.init(chartDom, null, renderOpts);
-
-                // 格式化数据
-                const dates = this.coinHistory.map(d => {
-                    return new Date(d.timestamp); // 直接返回Date对象，ECharts能自动处理
-                });
-                console.log(dates[0], dates[dates.length -1]);
-                const prices = this.coinHistory.map(d => [
-                    new Date(d.timestamp), // 日期
-                    parseFloat(d.current_price) // 值
-                ]);
-
-                const volumes = this.coinHistory.map(d => [
-                    new Date(d.timestamp), // 日期
-                    parseFloat(d.total_volume) // 值
-                ]);
-
-                // ECharts 配置 - 在一个div中显示价格和交易量
-                const option = {
+                const debugData = this.coinHistory.map(d => ({
+                    date: new Date(d.timestamp),
+                    price: parseFloat(d.current_price),
+                    volume: parseFloat(d.total_volume),
+                    market_cap: parseFloat(d.market_cap) || null,
+                    market_cap_rank: parseInt(d.market_cap_rank) || null,
+                    price_change_percentage_24h: parseFloat(d.price_change_percentage_24h) || 0,
+                    high_24h: parseFloat(d.high_24h) || null,
+                    low_24h: parseFloat(d.low_24h) || null,
+                }));
+                
+                // 调试用配置 - 也使用双图表布局
+                const debugOption = {
                     title: {
                         text: `${this.selectedCoin.name} (${this.selectedCoin.symbol.toUpperCase()})`,
                         left: 'center',
@@ -188,7 +161,7 @@ createApp({
                                 color: '#999'
                             }
                         },
-                        snap: true,  // 添加这个配置，让提示线自动吸附到数据点
+                        snap: true,
                         label: {
                             show: true,  // 确保显示坐标值
                             backgroundColor: '#666'
@@ -197,32 +170,20 @@ createApp({
                         textStyle: {
                             color: '#fff'
                         },
-                        formatter: function(params) {
-                            let result = `<div>时间: ${params[0].axisValue}</div>`;
-                            params.forEach(param => {
-                                if (param.seriesName === '价格') {
-                                    result += `<div>价格: $${param.data.toFixed(2)}</div>`;
-                                } else if (param.seriesName === '交易量') {
-                                    result += `<div>交易量: $${param.data.toLocaleString()}</div>`;
-                                }
-                            });
-                            return result;
-                        }
-                    },
 
-                    // 配置多个网格区域
+                    },
                     grid: [
                         {
                             // 价格图区域 - 上半部分
-                            top: '15%',
-                            bottom: '25%',
+                            top: '10%',
+                            bottom: '30%',
                             left: '10%',
                             right: '10%',
                             containLabel: true
                         },
                         {
                             // 交易量图区域 - 下半部分
-                            top: '80%',
+                            top: '75%',
                             bottom: '10%',
                             left: '10%',
                             right: '10%',
@@ -235,10 +196,9 @@ createApp({
                             type: 'time',
                             name: '时间',
                             gridIndex: 0,
-                            data: dates,
                             axisLabel: {
                                 color: '#666',
-                                rotate: 20,
+                                rotate: 0,
                                 interval: 'auto',
                                 formatter: '{MM}-{dd} {HH}:{mm}',
 
@@ -247,13 +207,15 @@ createApp({
                                 lineStyle: {
                                     color: '#ccc'
                                 }
-                            }
+                            },
+                            boundaryGap: false, // 重要：让数据点从边缘开始
+                            min: 'dataMin', // 确保最小值为数据最小值
+                            max: 'dataMax'  // 确保最大值为数据最大值                            
                         },
                         {
                             // 交易量图的X轴
                             type: 'time',
                             gridIndex: 1,
-                            data: dates,
                             axisLabel: {
                                 show: false
                             },
@@ -262,7 +224,8 @@ createApp({
                             },
                             axisLine: {
                                 show: false
-                            }
+                            },
+                            boundaryGap: false, // 重要：让数据点从边缘开始
                         }
                     ],
                     yAxis: [
@@ -293,7 +256,6 @@ createApp({
                             // 交易量图的Y轴
                             type: 'value',
                             gridIndex: 1,
-                            scale: true,
                             name: '交易量',
                             position: 'left',
                             axisLabel: {
@@ -306,7 +268,7 @@ createApp({
                                     if (value >= 1e3) return (value / 1e3).toFixed(2) + 'K';
                                     return value.toString();
                                 },
-                                show: false
+                                show: true
                             },
                             axisLine: {
                                 lineStyle: {
@@ -321,14 +283,13 @@ createApp({
                         }
                     ],
                     series: [
-                        {
+                        { // 价格线
                             name: '价格',
                             type: 'line',
                             xAxisIndex: 0,
                             yAxisIndex: 0,
-                            data: prices,
+                            data: debugData.map(d => [d.date, d.price]),
                             smooth: true,
-
                             symbolSize: 4,
                             itemStyle: {
                                 color: 'rgba(75, 192, 192, 1)'
@@ -357,13 +318,12 @@ createApp({
                                 focus: 'series'
                             }
                         },
-                        {
+                        { // 交易量线
                             name: '交易量',
-                            type: 'line',
-                            symbol: 'circle',                            
+                            type: 'bar',
                             xAxisIndex: 1,
                             yAxisIndex: 1,
-                            data: volumes,
+                            data: debugData.map(d => [d.date, d.volume]),
                             itemStyle: {
                                 color: 'rgba(54, 162, 235, 0.7)'
                             },
@@ -371,60 +331,47 @@ createApp({
                             emphasis: {
                                 focus: 'series'
                             }
-                        }
+                        },
                     ],
                     dataZoom: [
                         {
                             type: 'inside',
-                            xAxisIndex: [0, 1], // 同时控制两个X轴
-                            start: 0,
+                            xAxisIndex: [0, 1],
+                            filterMode: 'none',
+                            start: 70,
                             end: 100,
-                            zoomOnMouseWheel: true, // 启用鼠标滚轮缩放
-                            moveOnMouseMove: true, // 鼠标移动时可以拖动
-                            moveOnMouseWheel: false, // 禁用鼠标滚轮平移
-                            throttle: 100 ,
-                            filterMode: 'filter'
+                            zoomOnMouseWheel: true,
+                            moveOnMouseMove: true
                         },
                         {
                             type: 'slider',
-                            xAxisIndex: [0, 1], // 同时控制两个X轴
-                            start: 0,
+                            xAxisIndex: [0, 1],
+                            start: 70,
                             end: 100,
-                            bottom: 10,
-                            height: 20,
-                            throttle: 100 ,
-                            filterMode: 'filter'
+                            filterMode: 'none'
                         }
                     ],
                     axisPointer: {
-                        link: [
-                            {
-                                xAxisIndex: 'all'
-                            }
-                        ],
+                        link: { xAxisIndex: 'all' },
                         triggerTooltip: true
-                    },                    
-                    
+                    }
                 };
-
-                // 设置配置项并渲染图表
-                option.animation = false;
-                option.progressive = 1000;
-                option.progressiveThreshold = 3000;
-
-                this.chart.setOption(option);
-
-                // 使用节流函数包装resize事件
-                const throttledResize = throttle(() => {
-                    this.chart.resize();
-                }, 200);
                 
-                window.addEventListener('resize', throttledResize);
-
-                this.$once('hook:beforeDestroy', () => {
-                    window.removeEventListener('resize', throttledResize);
+                debugChart.setOption(debugOption);
+                
+                // 添加事件监听用于调试
+                debugChart.on('dataZoom', params => {
+                    console.log('调试图表缩放事件:', {
+                        start: params.start,
+                        end: params.end,
+                        startValue: params.startValue,
+                        endValue: params.endValue
+                    });
                 });
+                   
             });
+        
+
         },
 
         // 页码跳转
@@ -462,6 +409,24 @@ createApp({
             }
         },
 
+        formatLargeNumber(num, digits) {
+            if (!num) return '0';
+            num = parseFloat(num);
+            
+            const lookup = [
+                { value: 1, symbol: '' },
+                { value: 1e3, symbol: 'K' },
+                { value: 1e6, symbol: 'M' },
+                { value: 1e9, symbol: 'B' }
+            ];
+            
+            const rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+            const item = [...lookup].reverse().find(item => num >= item.value);
+            
+            return item 
+                ? (num / item.value).toFixed(digits).replace(rx, '$1') + item.symbol
+                : num.toFixed(digits);
+        },
         formatPrice,
         formatMarketCap,
         formatVolume,
