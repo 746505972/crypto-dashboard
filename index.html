@@ -150,7 +150,12 @@
                     <!-- ✅ 图表容器 -->
                     <div id="chart-container">
                         <div id="debug-chart" style="width: 100%; height: 600px;"></div>
-                     
+                        <div class="time-period-selector">
+                            <button @click="changeTimePeriod('1d')" :class="{active: currentPeriod === '1d'}">1天</button>
+                            <button @click="changeTimePeriod('7d')" :class="{active: currentPeriod === '7d'}">7天</button>
+                            <button @click="changeTimePeriod('30d')" :class="{active: currentPeriod === '30d'}">30天</button>
+                        </div>
+                        <div id="candle-chart" style="width: 100%; height: 500px;"></div>
 
                     </div>
 

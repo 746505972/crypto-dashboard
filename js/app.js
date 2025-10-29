@@ -1,5 +1,7 @@
 // 主Vue应用
 const { createApp } = Vue;
+const upColor = '#00da3c';
+const downColor = '#ec0000';
 
 createApp({
     data() {
@@ -20,6 +22,9 @@ createApp({
             coinHistory: [], 
             chart: null, 
             chartError: null,
+            currentPeriod: '1d', // 当前显示的时间周期
+            candleChart: null,   // 蜡烛图实例
+            ohlcData: {},        // 存储从JSON加载的数据
         };
     },
     
@@ -103,12 +108,16 @@ createApp({
                 }
 
                 this.coinHistory = filtered;
-
+                // 加载OHLC数据
+                await this.loadOHLCData();
                 // ✅ 确保 DOM 更新后绘制图表
                 this.$nextTick(() => {
                     this.renderChart();
+                    // 渲染蜡烛图
+                    this.renderCandleChart();
                 });
-
+                
+                
             } catch (err) {
                 console.error("加载历史数据失败:", err);
                 this.chartError = `加载历史数据失败: ${err.message}`;
@@ -250,6 +259,13 @@ createApp({
                             containLabel: true
                         }
                     ],
+                    brush: {
+                        xAxisIndex: 'all',
+                        brushLink: 'all',
+                        outOfBrush: {
+                        colorAlpha: 0.1
+                        }
+                    },
                     xAxis: [
                         {
                             // 价格图的X轴
@@ -420,22 +436,267 @@ createApp({
                 };
                 
                 debugChart.setOption(debugOption);
-                
-                // 添加事件监听用于调试
-                debugChart.on('dataZoom', params => {
-                    console.log('调试图表缩放事件:', {
-                        start: params.start,
-                        end: params.end,
-                        startValue: params.startValue,
-                        endValue: params.endValue
+
+                window.addEventListener('resize', () => {
+                    this.debugChart.resize();
                     });
-                });
-                   
             });
         
-
         },
 
+        // 加载OHLC数据
+        async loadOHLCData() {
+        try {
+            const response = await fetch('data/ohlc_data.json');
+            if (!response.ok) throw new Error('OHLC数据加载失败');
+            this.ohlcData = await response.json();
+        } catch (error) {
+            console.error('加载OHLC数据失败:', error);
+            this.chartError = '加载K线数据失败';
+        }
+        },
+        
+        // 转换数据格式以匹配模板
+        splitData(rawData) {
+        let categoryData = [];
+        let values = [];
+        
+        for (let i = 0; i < rawData.length; i++) {
+            categoryData.push(new Date(rawData[i].splice(0, 1)[0]));
+            values.push(rawData[i]);
+        }
+        
+        return {
+            categoryData: categoryData,
+            values: values,
+        };
+        },
+        
+        // 计算移动平均线
+        calculateMA(dayCount, data) {
+        var result = [];
+        for (var i = 0, len = data.values.length; i < len; i++) {
+            if (i < dayCount) {
+            result.push('-');
+            continue;
+            }
+            var sum = 0;
+            for (var j = 0; j < dayCount; j++) {
+            sum += data.values[i - j][3]; // 使用收盘价计算
+            }
+            result.push(+(sum / dayCount).toFixed(3));
+        }
+        return result;
+        },
+        
+        // 渲染蜡烛图
+        renderCandleChart() {
+            if (!this.selectedCoin || !this.ohlcData[this.selectedCoin.id]) {
+                console.warn('没有可用的OHLC数据');
+                return;
+            }
+            
+            // 初始化图表
+            this.$nextTick(() => {
+                // 获取当前币种和周期的数据
+                const coinId = this.selectedCoin.id;
+                const rawData = this.ohlcData[coinId][this.currentPeriod];
+                
+                // 转换数据格式
+                const data = this.splitData(rawData);
+
+                console.log('处理后的数据样例:', {
+                    categoryData: data.categoryData.slice(0, 50),
+                    values: data.values.slice(0, 50),
+                });
+                
+                // 计算各种均线
+                const ma5 = this.calculateMA(5, data);
+                const ma10 = this.calculateMA(10, data);
+                const ma20 = this.calculateMA(20, data);
+                const ma30 = this.calculateMA(30, data);
+                const chartDom = document.getElementById('candle-chart');
+                if (!this.candleChart) {
+                this.candleChart = echarts.init(chartDom);
+                }
+                
+                const option = {
+                animation: false,
+                legend: {
+                    bottom: 10,
+                    left: 'center',
+                    data: [`${this.selectedCoin.name}`, 'MA5', 'MA10', 'MA20', 'MA30']
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                    type: 'cross'
+                    },
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    padding: 10,
+                    textStyle: {
+                    color: '#000'
+                    },
+                    position: function (pos, params, el, elRect, size) {
+                    const obj = {
+                        top: 10
+                    };
+                    obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                    return obj;
+                    }
+                    // extraCssText: 'width: 170px'
+                },
+                brush: {
+                    xAxisIndex: 'all',
+                    brushLink: 'all',
+                    outOfBrush: {
+                    colorAlpha: 0.1
+                    }
+                },
+                axisPointer: {
+                    link: [
+                    {
+                        xAxisIndex: 'all'
+                    }
+                    ],
+                    label: {
+                    backgroundColor: '#777'
+                    }
+                },
+                xAxis: [
+                    {
+                    type: 'category',
+                    data: data.categoryData,
+                    boundaryGap: false,
+
+                    min: 'dataMin',
+                    max: 'dataMax',
+                    axisLabel: {
+                        color: '#666',
+                        rotate: 0,
+                        interval: 'auto',
+                            formatter: function (value) {
+                            // 确保value是Date对象（如果已经是字符串需要转换）
+                            const date = value instanceof Date ? value : new Date(value);
+                            
+                            // 提取各个时间部分
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份补零
+                            const day = String(date.getDate()).padStart(2, '0'); // 日期补零
+                            const hours = String(date.getHours()).padStart(2, '0'); // 小时补零
+                            const minutes = String(date.getMinutes()).padStart(2, '0'); // 分钟补零
+                            // 组合成"年-月-日 时:分"格式
+                            return `${year}-${month}-${day} ${hours}:${minutes}`;
+                            } 
+
+                    },                
+                    },
+                ],
+                yAxis: [
+                    {
+                    scale: true,
+                    splitArea: {
+                        show: true
+                    },
+                    axisLabel: {
+                        formatter: '${value}'
+                    }
+                    },
+                ],
+                dataZoom: [
+                    {
+                    type: 'inside',
+                    start: 70,
+                    end: 100,
+                    filterMode: 'none',
+                    zoomOnMouseWheel: true,
+                    moveOnMouseMove: true
+                    },
+                    {
+                    show: true,
+                    type: 'slider',
+                    filterMode: 'none',
+                    top: '90%',
+                    start: 70,
+                    end: 100
+                    }
+                ],
+                series: [
+                    {
+                    name: `${this.selectedCoin.name}`,
+                    type: 'candlestick',
+                    data: data.values,
+                    itemStyle: {
+                        color: upColor,
+                        color0: downColor,
+                        borderColor: undefined,
+                        borderColor0: undefined
+                    }
+                    },
+                    {
+                    name: 'MA5',
+                    type: 'line',
+                    data: ma5,
+                    smooth: true,
+                    lineStyle: {
+                        opacity: 0.5,
+                        width: 1,
+                        color: '#FF9800'
+                    }
+                    },
+                    {
+                    name: 'MA10',
+                    type: 'line',
+                    data: ma10,
+                    smooth: true,
+                    lineStyle: {
+                        opacity: 0.5,
+                        width: 1,
+                        color: '#2196F3'
+                    }
+                    },
+                    {
+                    name: 'MA20',
+                    type: 'line',
+                    data: ma20,
+                    smooth: true,
+                    lineStyle: {
+                        opacity: 0.5,
+                        width: 1,
+                        color: '#9C27B0'
+                    }
+                    },
+                    {
+                    name: 'MA30',
+                    type: 'line',
+                    data: ma30,
+                    smooth: true,
+                    lineStyle: {
+                        opacity: 0.5,
+                        width: 1,
+                        color: '#E91E63'
+                    }
+                    },
+                ]
+                };
+                
+                this.candleChart.setOption(option);
+                
+                // 窗口大小变化时重新调整图表
+                window.addEventListener('resize', () => {
+                this.candleChart.resize();
+                });
+            });
+        },
+
+        
+        // 切换时间周期
+        changeTimePeriod(period) {
+            this.currentPeriod = period;
+            this.renderCandleChart();
+        },
+        
         // 页码跳转
         async goToPage() {
             const target = parseInt(this.gotoPageInput);
