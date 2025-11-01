@@ -516,172 +516,211 @@ createApp({
                 const ma20 = this.calculateMA(20, data);
                 const ma30 = this.calculateMA(30, data);
                 const chartDom = document.getElementById('candle-chart');
-                if (!this.candleChart) {
-                this.candleChart = echarts.init(chartDom);
+                if (!chartDom) {
+                    console.error('找不到调试图表容器 #debug-chart');
+                    return;
                 }
+
+                if (this.candleChart) {
+                    this.candleChart.dispose();
+                }
+                this.candleChart = echarts.init(chartDom);
+                const candleChart = echarts.init(chartDom);
                 
                 const option = {
-                animation: false,
-                legend: {
-                    bottom: 10,
-                    left: 'center',
-                    data: [`${this.selectedCoin.name}`, 'MA5', 'MA10', 'MA20', 'MA30']
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                    type: 'cross'
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross',
+                            crossStyle: {
+                                color: '#999'
+                            }
+                        },
+                        snap: true,
+                        label: {
+                            show: true,  // 确保显示坐标值
+                            backgroundColor: '#666'
+                        },
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        textStyle: {
+                            color: '#fff'
+                        },
+
                     },
-                    borderWidth: 1,
-                    borderColor: '#ccc',
-                    padding: 10,
-                    textStyle: {
-                    color: '#000'
+
+                    brush: {
+                        xAxisIndex: 'all',
+                        brushLink: 'all',
+                        outOfBrush: {
+                        colorAlpha: 0.1
+                        }
                     },
-                    position: function (pos, params, el, elRect, size) {
-                    const obj = {
-                        top: 10
-                    };
-                    obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
-                    return obj;
-                    }
-                    // extraCssText: 'width: 170px'
-                },
-                brush: {
-                    xAxisIndex: 'all',
-                    brushLink: 'all',
-                    outOfBrush: {
-                    colorAlpha: 0.1
-                    }
-                },
-                axisPointer: {
-                    link: [
-                    {
-                        xAxisIndex: 'all'
-                    }
+                    xAxis: [
+                        {
+                            // 价格图的X轴
+                            type: 'category',
+                            name: '时间',
+                            gridIndex: 0,
+                            data : data.categoryData,
+                            axisLabel: {
+                                color: '#666',
+                                rotate: 0,
+                                interval: 'auto',
+                                    formatter: function (value) {
+                                    // 确保value是Date对象（如果已经是字符串需要转换）
+                                    const date = value instanceof Date ? value : new Date(value);
+                                    
+                                    // 提取各个时间部分
+                                    const year = date.getFullYear();
+                                    const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份补零
+                                    const day = String(date.getDate()).padStart(2, '0'); // 日期补零
+                                    const hours = String(date.getHours()).padStart(2, '0'); // 小时补零
+                                    const minutes = String(date.getMinutes()).padStart(2, '0'); // 分钟补零
+                                    // 组合成"年-月-日 时:分"格式
+                                    return `${year}-${month}-${day} ${hours}:${minutes}`;
+                                    } 
+
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            boundaryGap: false, // 重要：让数据点从边缘开始
+                            min: 'dataMin', // 确保最小值为数据最小值
+                            max: 'dataMax'  // 确保最大值为数据最大值                            
+                        },
                     ],
-                    label: {
-                    backgroundColor: '#777'
-                    }
-                },
-                xAxis: [
-                    {
-                    type: 'category',
-                    data: data.categoryData,
-                    boundaryGap: false,
+                    yAxis: [
+                        {
+                            // 价格图的Y轴
+                            type: 'value',
+                            gridIndex: 0,
+                            scale: true,
+                            name: '价格 (USD)',
+                            position: 'left',
+                            axisLabel: {
+                                color: '#666',
+                                formatter: '${value}',
+                                interval: 'auto'
+                            },
+                            axisLine: {
+                                lineStyle: {
+                                    color: '#ccc'
+                                }
+                            },
+                            splitLine: {
+                                lineStyle: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            }
+                        },
+                    ],
+                    series: [
+                        { // 价格线
+                            name: `${this.selectedCoin.name}`,
+                            type: 'candlestick',
+                            xAxisIndex: 0,
+                            yAxisIndex: 0,
+                            data: data.values,
 
-                    min: 'dataMin',
-                    max: 'dataMax',
-                    axisLabel: {
-                        color: '#666',
-                        rotate: 0,
-                        interval: 'auto',
-                            formatter: function (value) {
-                            // 确保value是Date对象（如果已经是字符串需要转换）
-                            const date = value instanceof Date ? value : new Date(value);
-                            
-                            // 提取各个时间部分
-                            const year = date.getFullYear();
-                            const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份补零
-                            const day = String(date.getDate()).padStart(2, '0'); // 日期补零
-                            const hours = String(date.getHours()).padStart(2, '0'); // 小时补零
-                            const minutes = String(date.getMinutes()).padStart(2, '0'); // 分钟补零
-                            // 组合成"年-月-日 时:分"格式
-                            return `${year}-${month}-${day} ${hours}:${minutes}`;
-                            } 
-
-                    },                
-                    },
-                ],
-                yAxis: [
-                    {
-                    scale: true,
-                    splitArea: {
-                        show: true
-                    },
-                    axisLabel: {
-                        formatter: '${value}'
+                            smooth: true,
+                            symbolSize: 4,
+                            itemStyle: {
+                                color: upColor,
+                                color0: downColor,
+                                borderColor: undefined,
+                                borderColor0: undefined
+                            },
+                            lineStyle: {
+                                color: 'rgba(75, 192, 192, 1)',
+                                width: 2
+                            },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0,
+                                    y: 0,
+                                    x2: 0,
+                                    y2: 1,
+                                    colorStops: [{
+                                        offset: 0,
+                                        color: 'rgba(75, 192, 192, 0.3)'
+                                    }, {
+                                        offset: 1,
+                                        color: 'rgba(75, 192, 192, 0.1)'
+                                    }]
+                                }
+                            },
+                            emphasis: {
+                                focus: 'series'
+                            }
+                        },
+                        {
+                            name: 'MA5',
+                            type: 'line',
+                            data: ma5,
+                            smooth: true,
+                            lineStyle: {
+                                opacity: 0.5,
+                                width: 1,
+                                color: '#FF9800'
+                            }
+                            },
+                            {
+                            name: 'MA10',
+                            type: 'line',
+                            data: ma10,
+                            smooth: true,
+                            lineStyle: {
+                                opacity: 0.5,
+                                width: 1,
+                                color: '#2196F3'
+                            }
+                            },
+                            {
+                            name: 'MA20',
+                            type: 'line',
+                            data: ma20,
+                            smooth: true,
+                            lineStyle: {
+                                opacity: 0.5,
+                                width: 1,
+                                color: '#9C27B0'
+                            }
+                            },
+                            {
+                            name: 'MA30',
+                            type: 'line',
+                            data: ma30,
+                            smooth: true,
+                            lineStyle: {
+                                opacity: 0.5,
+                                width: 1,
+                                color: '#E91E63'
+                            }
+                            },
+                    
+                    ],
+                    dataZoom: [
+                        {
+                            type: 'inside',
+                            filterMode: 'none',
+                            zoomOnMouseWheel: true,
+                            moveOnMouseMove: true
+                        },
+                        {
+                            type: 'slider',
+                            filterMode: 'none'
+                        }
+                    ],
+                    axisPointer: {
+                        link: { xAxisIndex: 'all' },
+                        triggerTooltip: true
                     }
-                    },
-                ],
-                dataZoom: [
-                    {
-                    type: 'inside',
-                    start: 70,
-                    end: 100,
-                    filterMode: 'none',
-                    zoomOnMouseWheel: true,
-                    moveOnMouseMove: true
-                    },
-                    {
-                    show: true,
-                    type: 'slider',
-                    filterMode: 'none',
-                    top: '90%',
-                    start: 70,
-                    end: 100
-                    }
-                ],
-                series: [
-                    {
-                    name: `${this.selectedCoin.name}`,
-                    type: 'candlestick',
-                    data: data.values,
-                    itemStyle: {
-                        color: upColor,
-                        color0: downColor,
-                        borderColor: undefined,
-                        borderColor0: undefined
-                    }
-                    },
-                    {
-                    name: 'MA5',
-                    type: 'line',
-                    data: ma5,
-                    smooth: true,
-                    lineStyle: {
-                        opacity: 0.5,
-                        width: 1,
-                        color: '#FF9800'
-                    }
-                    },
-                    {
-                    name: 'MA10',
-                    type: 'line',
-                    data: ma10,
-                    smooth: true,
-                    lineStyle: {
-                        opacity: 0.5,
-                        width: 1,
-                        color: '#2196F3'
-                    }
-                    },
-                    {
-                    name: 'MA20',
-                    type: 'line',
-                    data: ma20,
-                    smooth: true,
-                    lineStyle: {
-                        opacity: 0.5,
-                        width: 1,
-                        color: '#9C27B0'
-                    }
-                    },
-                    {
-                    name: 'MA30',
-                    type: 'line',
-                    data: ma30,
-                    smooth: true,
-                    lineStyle: {
-                        opacity: 0.5,
-                        width: 1,
-                        color: '#E91E63'
-                    }
-                    },
-                ]
                 };
                 
-                this.candleChart.setOption(option);
+                candleChart.setOption(option);
                 
                 // 窗口大小变化时重新调整图表
                 window.addEventListener('resize', () => {
